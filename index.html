@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Shopping List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Grocery List</h1>
+            <p>Never forget what you need to buy!</p>
+        </div>
+
+        <div class="input-container">
+            <input type="text" class="item-input" placeholder="Add a grocery item..." id="itemInput">
+            <select class="category-select" id="categorySelect">
+                <option value="general">General</option>
+                <option value="vegetables">🥕 Vegetables</option>
+                <option value="fruits">🍎 Fruits</option>
+            </select>
+            <button class="add-btn" id="addBtn">Add</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" id="totalItems">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="completedItems">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="remainingItems">0</div>
+                <div class="stat-label">Remaining</div>
+            </div>
+        </div>
+
+        <div class="grocery-list" id="groceryList">
+            <div class="empty-state" id="emptyState">
+                <div style="font-size: 4em; margin-bottom: 15px;">🛍️</div>
+                <h3>Your grocery list is empty</h3>
+                <p>Add some items to get started!</p>
+            </div>
+        </div>
+
+        <button class="clear-completed" id="clearCompleted" disabled>Clear Completed Items</button>
+    </div>
+
+    <script>
+        class GroceryApp {
+            constructor() {
+                this.items = [];
+                this.itemIdCounter = 1;
+                this.initializeElements();
+                this.attachEventListeners();
+                this.updateUI();
+            }
+
+            initializeElements() {
+                this.itemInput = document.getElementById('itemInput');
+                this.categorySelect = document.getElementById('categorySelect');
+                this.addBtn = document.getElementById('addBtn');
+                this.groceryList = document.getElementById('groceryList');
+                this.emptyState = document.getElementById('emptyState');
+                this.totalItems = document.getElementById('totalItems');
+                this.completedItems = document.getElementById('completedItems');
+                this.remainingItems = document.getElementById('remainingItems');
+                this.clearCompleted = document.getElementById('clearCompleted');
+            }
+
+            attachEventListeners() {
+                this.addBtn.addEventListener('click', () => this.addItem());
+                this.itemInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addItem();
+                });
+                this.clearCompleted.addEventListener('click', () => this.clearCompletedItems());
+            }
+
+            addItem() {
+                const text = this.itemInput.value.trim();
+                const category = this.categorySelect.value;
+                if (!text) return;
+
+                const item = {
+                    id: this.itemIdCounter++,
+                    text: text,
+                    category: category,
+                    quantity: 1,
+                    completed: false
+                };
+
+                this.items.push(item);
+                this.itemInput.value = '';
+                this.updateUI();
+            }
+
+            toggleItem(id) {
+                const item = this.items.find(item => item.id === id);
+                if (item) {
+                    item.completed = !item.completed;
+                    this.updateUI();
+                }
+            }
+
+            deleteItem(id) {
+                this.items = this.items.filter(item => item.id !== id);
+                this.updateUI();
+            }
+
+            updateQuantity(id, change) {
+                const item = this.items.find(item => item.id === id);
+                if (item) {
+                    const newQuantity = item.quantity + change;
+                    if (newQuantity >= 1 && newQuantity <= 99) {
+                        item.quantity = newQuantity;
+                        this.updateUI();
+                    }
+                }
+            }
+
+            clearCompletedItems() {
+                this.items = this.items.filter(item => !item.completed);
+                this.updateUI();
+            }
+
+            updateUI() {
+                this.renderItems();
+                this.updateStats();
+                this.updateClearButton();
+            }
+
+            renderItems() {
+                if (this.items.length === 0) {
+                    this.emptyState.style.display = 'block';
+                    return;
+                }
+
+                this.emptyState.style.display = 'none';
+                
+                const categories = {
+                    vegetables: { title: '🥕 Vegetables', items: [] },
+                    fruits: { title: '🍎 Fruits', items: [] },
+                    general: { title: '🛍️ General Items', items: [] }
+                };
+
+                // Group items by category
+                this.items.forEach(item => {
+                    categories[item.category].items.push(item);
+                });
+
+                let html = '';
+                
+                // Render each category section
+                Object.entries(categories).forEach(([categoryKey, category]) => {
+                    if (category.items.length > 0) {
+                        const completedCount = category.items.filter(item => item.completed).length;
+                        
+                        html += `
+                            <div class="section-items">
+                                <div class="section-header">
+                                    <div class="section-title">${category.title}</div>
+                                    <div class="section-count">${completedCount}/${category.items.length}</div>
+                                </div>
+                                ${category.items.map(item => `
+                                    <div class="grocery-item ${item.completed ? 'completed' : ''}">
+                                        <input type="checkbox" class="item-checkbox" 
+                                               ${item.completed ? 'checked' : ''} 
+                                               onchange="app.toggleItem(${item.id})">
+                                        <span class="item-text">${this.escapeHtml(item.text)}</span>
+                                        <div class="quantity-controls">
+                                            <button class="quantity-btn" 
+                                                    onclick="app.updateQuantity(${item.id}, -1)"
+                                                    ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                                            <span class="quantity-display">${item.quantity}</span>
+                                            <button class="quantity-btn" 
+                                                    onclick="app.updateQuantity(${item.id}, 1)"
+                                                    ${item.quantity >= 99 ? 'disabled' : ''}>+</button>
+                                        </div>
+                                        <span class="category-tag category-${item.category}">
+                                            ${this.getCategoryIcon(item.category)}
+                                        </span>
+                                        <button class="delete-btn" onclick="app.deleteItem(${item.id})">×</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                });
+
+                this.groceryList.innerHTML = html;
+            }
+
+            getCategoryIcon(category) {
+                const icons = {
+                    vegetables: '🥕',
+                    fruits: '🍎',
+                    general: '🛍️'
+                };
+                return icons[category] || '🛍️';
+            }
+
+            updateStats() {
+                const total = this.items.length;
+                const completed = this.items.filter(item => item.completed).length;
+                const remaining = total - completed;
+
+                this.totalItems.textContent = total;
+                this.completedItems.textContent = completed;
+                this.remainingItems.textContent = remaining;
+            }
+
+            updateClearButton() {
+                const hasCompleted = this.items.some(item => item.completed);
+                this.clearCompleted.disabled = !hasCompleted;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the app
+        const app = new GroceryApp();
+    </script>
+</body>
+</html>
