@@ -12,7 +12,6 @@
             <h1>🛒 Grocery List</h1>
             <p>Never forget what you need to buy!</p>
         </div>
-
         <div class="input-container">
             <input type="text" class="item-input" placeholder="Add a grocery item..." id="itemInput">
             <select class="category-select" id="categorySelect">
@@ -22,7 +21,6 @@
             </select>
             <button class="add-btn" id="addBtn">Add</button>
         </div>
-
         <div class="stats">
             <div class="stat">
                 <div class="stat-number" id="totalItems">0</div>
@@ -37,7 +35,6 @@
                 <div class="stat-label">Remaining</div>
             </div>
         </div>
-
         <div class="grocery-list" id="groceryList">
             <div class="empty-state" id="emptyState">
                 <div style="font-size: 4em; margin-bottom: 15px;">🛍️</div>
@@ -223,9 +220,9 @@
                 return div.innerHTML;
             }
         }
-
-        // Initialize the app
+    // Initialize the app
         const app = new GroceryApp();
     </script>
 </body>
+
 </html>
